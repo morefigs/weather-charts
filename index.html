@@ -85,11 +85,7 @@
       const options = { weekday: 'short', day: 'numeric' };
       for (let i = 0; i < hours.length; i++) {
         const date = new Date(hours[i]);
-        if (date.getHours() === 12) {
-          labels[i] = date.toLocaleString('en-AU', options);
-        } else {
-          labels[i] = '';
-        }
+        labels[i] = date.getHours() === 12 ?  date.toLocaleString('en-AU', options) : '';
       }
       return labels;
     }
