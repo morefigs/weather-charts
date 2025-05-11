@@ -53,7 +53,7 @@
     }
 
     async function fetchWeather(lat, lon) {
-      const cacheKey = `weather-charts-cacxhe-${lat}-${lon}`;
+      const cacheKey = `weather-charts-data-${lat}-${lon}`;
       const cached = getCachedWeather(cacheKey);
       if (cached) return cached;
 
@@ -82,6 +82,13 @@
     }
 
     function createChart(container, location, hours, temp, humidity, wind, cloudCover, rainProb, rainAmount, isFirst) {
+      const title = document.createElement('h2');
+      title.textContent = location;
+      title.style.margin = '40px 0 10px';
+      title.style.fontSize = '16px';
+      title.style.color = '#ffffff';
+      container.appendChild(title);
+
       const canvas = document.createElement('canvas');
       canvas.width = 1000;
       canvas.height = 200;
@@ -98,7 +105,7 @@
               type: 'line',
               data: temp,
               borderColor: 'rgb(255, 99, 0)',
-              borderWidth: 3,
+              borderWidth: 2,
               yAxisID: 'y_0_40',
               pointRadius: 0,
               fill: false,
@@ -108,18 +115,17 @@
               label: 'Relative humidity (%)',
               type: 'line',
               data: humidity,
-              borderColor: 'green',
+              borderColor: 'rgb(31,205,31)',
               borderWidth: 2,
               yAxisID: 'y_0_100',
               pointRadius: 0,
-              fill: true,
-              backgroundColor: 'rgba(0,255,111,0.05)'
+              fill: false
             },
             {
               label: 'Wind speed (km/h)',
               type: 'line',
               data: wind,
-              borderColor: 'rgb(111,111,1)',
+              borderColor: 'rgba(255,255,255,0.7)',
               borderWidth: 2,
               yAxisID: 'y_0_40',
               pointRadius: 0,
@@ -129,29 +135,27 @@
               label: 'Cloud cover (%)',
               type: 'line',
               data: cloudCover,
-              borderColor: 'rgb(100,100,100)',
-              borderWidth: 2,
+              borderWidth: 0,
               yAxisID: 'y_0_100',
               pointRadius: 0,
               fill: true,
-              backgroundColor: 'rgba(100,100,100,0.1)'
+              backgroundColor: 'rgba(120,120,120,0.3)'
             },
             {
               label: 'Rain probability (%)',
               type: 'line',
               data: rainProb,
-              borderColor: 'deepskyblue',
-              borderWidth: 2,
+              borderWidth: 0,
               yAxisID: 'y_0_100',
               pointRadius: 0,
               fill: true,
-              backgroundColor: 'rgba(deepskyblue,0.1)'
+              backgroundColor: 'rgba(0,111,255,0.45)'
             },
             {
               label: 'Rainfall (mm)',
               type: 'bar',
               data: rainAmount,
-              backgroundColor: 'rgba(0,191,255,1)',
+              backgroundColor: 'rgb(120,173,255)',
               yAxisID: 'y_0_5',
               borderSkipped: false,
               barPercentage: 0.75,
@@ -212,17 +216,28 @@
                 }
               }
             },
-
             y_0_40: {
               type: 'linear',
               position: 'left',
               title: { display: true, text: 'Temperature (°C) / Wind (km/h)', color: '#fff' },
               min: 0,
               max: 40,
-              ticks: { color: '#ccc' },
-              grid: { drawOnChartArea: false }
+              ticks: {
+                color: '#ccc',
+                stepSize: 5
+              },
+              grid: {
+                drawOnChartArea: true,
+                color: (ctx) => {
+                  const value = ctx.tick.value;
+                  return value % 10 === 0 ? '#666' : '#444';
+                },
+                lineWidth: (ctx) => {
+                  const value = ctx.tick.value;
+                  return value % 10 === 0 ? 1.5 : 0.5;
+                }
+              }
             },
-
             y_0_100: {
               type: 'linear',
               position: 'right',
@@ -239,7 +254,7 @@
               offset: false,
               title: { display: true, text: 'Rainfall (mm)', color: '#fff' },
               min: 0,
-              max: 5,
+              max: 4,
               ticks: { color: '#ccc' },
               grid: { drawOnChartArea: false }
             }
