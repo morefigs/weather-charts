@@ -106,7 +106,7 @@
               label: 'Temperature (°C)',
               type: 'line',
               data: temp,
-              borderColor: 'rgb(255, 99, 0)',
+              borderColor: 'rgb(255,145,0)',
               borderWidth: 2,
               yAxisID: 'y_0_40',
               pointRadius: 0,
@@ -117,7 +117,7 @@
               label: 'Relative humidity (%)',
               type: 'line',
               data: humidity,
-              borderColor: 'rgb(31,205,31)',
+              borderColor: 'rgb(35,186,0)',
               borderWidth: 2,
               yAxisID: 'y_0_100',
               pointRadius: 0,
@@ -212,7 +212,7 @@
                   const index = ctx.tick?.value;
                   if (index !== undefined && hours[index]) {
                     const hour = new Date(hours[index]).getHours();
-                    return hour === 0 ? '#555' : 'transparent';
+                    return hour === 0 ? '#444' : 'transparent';
                   }
                   return 'transparent';
                 }
@@ -232,11 +232,7 @@
                 drawOnChartArea: true,
                 color: (ctx) => {
                   const value = ctx.tick.value;
-                  return value % 10 === 0 ? '#666' : '#444';
-                },
-                lineWidth: (ctx) => {
-                  const value = ctx.tick.value;
-                  return value % 10 === 0 ? 1.5 : 0.5;
+                  return value % 10 === 0 ? '#666' : '#333';
                 }
               }
             },
