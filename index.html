@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather charts</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #121212;
+      color: #ffffff;
+    }
+    canvas {
+      background: #1e1e1e;
+      border: 1px solid #444;
+      margin-bottom: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div id="charts"></div>
+
+  <script>
+    const locations = {
+      "Sydney": { lat: -33.8688, lon: 151.2093 }
+    };
+
+    function getCachedWeather(key) {
+      const cached = localStorage.getItem(key);
+      if (!cached) return null;
+
+      try {
+        const parsed = JSON.parse(cached);
+        const ageMinutes = (Date.now() - parsed.timestamp) / 1000 / 60;
+        if (ageMinutes < 60) return parsed.data;
+      } catch (e) {
+        console.warn("Failed to parse cached data", e);
+      }
+
+      return null;
+    }
+
+    function cacheWeather(key, data) {
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          timestamp: Date.now(),
+          data
+        })
+      );
+    }
+
+    async function fetchWeather(lat, lon) {
+      const cacheKey = `weather-charts-cacxhe-${lat}-${lon}`;
+      const cached = getCachedWeather(cacheKey);
+      if (cached) return cached;
+
+      const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,cloud_cover,precipitation_probability,precipitation&forecast_days=14&timezone=Australia/Sydney`);
+      const data = await response.json();
+      if (!data.hourly || !data.hourly.temperature_2m) {
+        console.error('Missing expected data for', lat, lon, data);
+        return null;
+      }
+      cacheWeather(cacheKey, data);
+      return data;
+    }
+
+    function formatLabels(hours) {
+      const labels = [];
+      const options = { weekday: 'short', day: 'numeric' };
+      for (let i = 0; i < hours.length; i++) {
+        const date = new Date(hours[i]);
+        if (date.getHours() === 12) {
+          labels[i] = date.toLocaleString('en-AU', options);
+        } else {
+          labels[i] = '';
+        }
+      }
+      return labels;
+    }
+
+    function createChart(container, location, hours, temp, humidity, wind, cloudCover, rainProb, rainAmount, isFirst) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1000;
+      canvas.height = 200;
+      container.appendChild(canvas);
+
+      const formattedLabels = formatLabels(hours);
+
+      new Chart(canvas.getContext('2d'), {
+        data: {
+          labels: formattedLabels,
+          datasets: [
+            {
+              label: 'Temperature (°C)',
+              type: 'line',
+              data: temp,
+              borderColor: 'rgb(255, 99, 0)',
+              borderWidth: 3,
+              yAxisID: 'y_0_40',
+              pointRadius: 0,
+              fill: false,
+              backgroundColor: 'rgba(deepskyblue,0.1)'
+            },
+            {
+              label: 'Relative humidity (%)',
+              type: 'line',
+              data: humidity,
+              borderColor: 'green',
+              borderWidth: 2,
+              yAxisID: 'y_0_100',
+              pointRadius: 0,
+              fill: true,
+              backgroundColor: 'rgba(0,255,111,0.05)'
+            },
+            {
+              label: 'Wind speed (km/h)',
+              type: 'line',
+              data: wind,
+              borderColor: 'rgb(111,111,1)',
+              borderWidth: 2,
+              yAxisID: 'y_0_40',
+              pointRadius: 0,
+              fill: false
+            },
+            {
+              label: 'Cloud cover (%)',
+              type: 'line',
+              data: cloudCover,
+              borderColor: 'rgb(100,100,100)',
+              borderWidth: 2,
+              yAxisID: 'y_0_100',
+              pointRadius: 0,
+              fill: true,
+              backgroundColor: 'rgba(100,100,100,0.1)'
+            },
+            {
+              label: 'Rain probability (%)',
+              type: 'line',
+              data: rainProb,
+              borderColor: 'deepskyblue',
+              borderWidth: 2,
+              yAxisID: 'y_0_100',
+              pointRadius: 0,
+              fill: true,
+              backgroundColor: 'rgba(deepskyblue,0.1)'
+            },
+            {
+              label: 'Rainfall (mm)',
+              type: 'bar',
+              data: rainAmount,
+              backgroundColor: 'rgba(0,191,255,1)',
+              yAxisID: 'y_0_5',
+              borderSkipped: false,
+              barPercentage: 0.75,
+              categoryPercentage: 1.0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          stacked: false,
+          plugins: {
+            title: { display: false },
+            legend: {
+              display: isFirst,
+              labels: {
+                usePointStyle: true,
+                pointStyle: 'line',
+                boxWidth: 40,
+                borderRadius: 0,
+                color: '#fff'
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  const label = ctx.dataset.label || '';
+                  const value = ctx.formattedValue;
+                  if (label.includes('Temperature')) return `${value} °C`;
+                  if (label.includes('Relative humidity')) return `${value} % RH`;
+                  if (label.includes('Wind')) return `${value} km/h`;
+                  if (label.includes('Cloud cover')) return `${value} % cover`;
+                  if (label.includes('Rain Probability')) return `${value} % rain`;
+                  if (label.includes('Rainfall')) return `${value} mm rain`;
+                  return `${label}: ${value}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: 0,
+                minRotation: 0,
+                color: '#ccc'
+              },
+              grid: {
+                drawTicks: true,
+                drawOnChartArea: true,
+                color: (ctx) => {
+                  const index = ctx.tick?.value;
+                  if (index !== undefined && hours[index]) {
+                    const hour = new Date(hours[index]).getHours();
+                    return hour === 0 ? '#555' : 'transparent';
+                  }
+                  return 'transparent';
+                }
+              }
+            },
+
+            y_0_40: {
+              type: 'linear',
+              position: 'left',
+              title: { display: true, text: 'Temperature (°C) / Wind (km/h)', color: '#fff' },
+              min: 0,
+              max: 40,
+              ticks: { color: '#ccc' },
+              grid: { drawOnChartArea: false }
+            },
+
+            y_0_100: {
+              type: 'linear',
+              position: 'right',
+              offset: false,
+              title: { display: true, text: 'Relative humidity (%) / Cloud cover (%) / Rain Probability (%)', color: '#fff' },
+              min: 0,
+              max: 100,
+              ticks: { color: '#ccc' },
+              grid: { drawOnChartArea: false }
+            },
+            y_0_5: {
+              type: 'linear',
+              position: 'right',
+              offset: false,
+              title: { display: true, text: 'Rainfall (mm)', color: '#fff' },
+              min: 0,
+              max: 5,
+              ticks: { color: '#ccc' },
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
+      });
+    }
+
+    async function loadAllCharts() {
+      const container = document.getElementById('charts');
+      let first = true;
+      for (const [name, { lat, lon }] of Object.entries(locations)) {
+        const data = await fetchWeather(lat, lon);
+        if (!data) continue;
+        createChart(
+          container,
+          name,
+          data.hourly.time,
+          data.hourly.temperature_2m,
+          data.hourly.relative_humidity_2m,
+          data.hourly.wind_speed_10m,
+          data.hourly.cloud_cover,
+          data.hourly.precipitation_probability,
+          data.hourly.precipitation,
+          first
+        );
+        first = false;
+      }
+    }
+
+    loadAllCharts();
+  </script>
+</body>
+</html>
