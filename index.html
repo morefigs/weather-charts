@@ -24,7 +24,9 @@
 
   <script>
     const locations = {
-      "Sydney": { lat: -33.8688, lon: 151.2093 }
+      "Sydney": { lat: -33.8688, lon: 151.2093 },
+      "Darwin": { lat: -12.4637, lon: 130.8444 },
+      "Perth": { lat: -31.9514, lon: 115.8617 }
     };
 
     function getCachedWeather(key) {
@@ -155,7 +157,7 @@
               label: 'Rainfall (mm/h)',
               type: 'bar',
               data: rainAmount,
-              backgroundColor: 'rgb(120,173,255)',
+              backgroundColor: 'deepskyblue',
               yAxisID: 'y_0_5',
               borderSkipped: false,
               barPercentage: 0.75,
@@ -252,7 +254,7 @@
               type: 'linear',
               position: 'right',
               offset: false,
-              title: { display: true, text: 'Rainfall (mm)', color: '#fff' },
+              title: { display: true, text: 'Rainfall (mm/h)', color: '#fff' },
               min: 0,
               max: 4,
               ticks: { color: '#ccc' },
