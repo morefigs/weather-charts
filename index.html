@@ -208,7 +208,7 @@
                 label: function (ctx) {
                   const label = ctx.dataset.label || '';
                   const value = ctx.formattedValue;
-                  if (label.includes('Temperature')) return `${value} °C`;
+                  if (label.includes('Temperature')) return `${Math.round(value)} °C`;
                   if (label.includes('Relative humidity')) return `${value}% RH`;
                   if (label.includes('Wind speed')) return `${Math.round(value)} km/h wind`;
                   if (label.includes('Wind direction')) return `${value} °`;
