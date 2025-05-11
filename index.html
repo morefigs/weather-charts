@@ -111,7 +111,7 @@
               yAxisID: 'y_0_40',
               pointRadius: 0,
               fill: false,
-              backgroundColor: 'rgba(deepskyblue,0.1)'
+              backgroundColor: 'rgb(255,145,0)'
             },
             {
               label: 'Relative humidity (%)',
@@ -121,7 +121,8 @@
               borderWidth: 2,
               yAxisID: 'y_0_100',
               pointRadius: 0,
-              fill: false
+              fill: false,
+              backgroundColor: 'rgb(35,186,0)'
             },
             {
               label: 'Wind speed (km/h)',
@@ -131,12 +132,14 @@
               borderWidth: 2,
               yAxisID: 'y_0_40',
               pointRadius: 0,
-              fill: false
+              fill: false,
+              backgroundColor: 'rgba(255,255,255,0.7)'
             },
             {
               label: 'Cloud cover (%)',
               type: 'line',
               data: cloudCover,
+              borderColor: 'rgba(120,120,120,0.3)',
               borderWidth: 0,
               yAxisID: 'y_0_100',
               pointRadius: 0,
@@ -147,6 +150,7 @@
               label: 'Rain probability (%)',
               type: 'line',
               data: rainProb,
+              borderColor: 'rgba(0,111,255,0.45)',
               borderWidth: 0,
               yAxisID: 'y_0_100',
               pointRadius: 0,
@@ -157,6 +161,7 @@
               label: 'Rainfall (mm/h)',
               type: 'bar',
               data: rainAmount,
+              borderColor: 'deepskyblue',
               backgroundColor: 'deepskyblue',
               yAxisID: 'y_0_5',
               borderSkipped: false,
@@ -174,9 +179,9 @@
             legend: {
               display: isFirst,
               labels: {
-                usePointStyle: true,
+                usePointStyle: false,
                 pointStyle: 'line',
-                boxWidth: 40,
+                boxWidth: 5,
                 borderRadius: 0,
                 color: '#fff'
               }
@@ -188,9 +193,9 @@
                   const value = ctx.formattedValue;
                   if (label.includes('Temperature')) return `${value} °C`;
                   if (label.includes('Relative humidity')) return `${value} % RH`;
-                  if (label.includes('Wind')) return `${value} km/h`;
-                  if (label.includes('Cloud cover')) return `${value} % cover`;
-                  if (label.includes('Rain Probability')) return `${value} % rain`;
+                  if (label.includes('Wind')) return `${value} km/h wind`;
+                  if (label.includes('Cloud cover')) return `${value} % cloud`;
+                  if (label.includes('Rain probability')) return `${value} % rain`;
                   if (label.includes('Rainfall')) return `${value} mm/h rain`;
                   return `${label}: ${value}`;
                 }
@@ -240,7 +245,7 @@
               type: 'linear',
               position: 'right',
               offset: false,
-              title: { display: true, text: 'Relative humidity (%) / Cloud cover (%) / Rain Probability (%)', color: '#fff' },
+              title: { display: true, text: 'Relative humidity (%) / Cloud cover (%) / Rain probability (%)', color: '#fff' },
               min: 0,
               max: 100,
               ticks: { color: '#ccc' },
