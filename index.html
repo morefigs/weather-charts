@@ -54,8 +54,8 @@
       );
     }
 
-    async function fetchWeather(lat, lon) {
-      const cacheKey = `weather-charts-data-${lat}-${lon}`;
+    async function fetchWeather(name, lat, lon) {
+      const cacheKey = `weather-charts-data-${name}`;
       const cached = getCachedWeather(cacheKey);
       if (cached) return cached;
 
