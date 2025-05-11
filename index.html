@@ -92,17 +92,25 @@
     }
 
     function createChart(container, location, hours, temp, humidity, wind, cloudCover, rainProb, rainAmount, isFirst) {
-      const title = document.createElement('h2');
-      title.textContent = location;
-      title.style.margin = '40px 0 10px';
-      title.style.fontSize = '16px';
-      title.style.color = '#ffffff';
-      container.appendChild(title);
+      const wrapper = document.createElement('div');
+      wrapper.style.display = 'flex';
+      wrapper.style.alignItems = 'center';
+      wrapper.style.marginBottom = '10px';
+
+      const label = document.createElement('div');
+      label.textContent = location;
+      label.style.writingMode = 'vertical-rl';
+      label.style.transform = 'rotate(180deg)';
+      label.style.marginRight = '10px';
+      label.style.color = '#ccc';
 
       const canvas = document.createElement('canvas');
       canvas.width = 1000;
       canvas.height = 200;
-      container.appendChild(canvas);
+
+      wrapper.appendChild(label);
+      wrapper.appendChild(canvas);
+      container.appendChild(wrapper);
 
       const formattedLabels = formatLabels(hours);
 
