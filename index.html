@@ -152,7 +152,7 @@
               backgroundColor: 'rgba(0,111,255,0.45)'
             },
             {
-              label: 'Rainfall (mm)',
+              label: 'Rainfall (mm/h)',
               type: 'bar',
               data: rainAmount,
               backgroundColor: 'rgb(120,173,255)',
@@ -189,7 +189,7 @@
                   if (label.includes('Wind')) return `${value} km/h`;
                   if (label.includes('Cloud cover')) return `${value} % cover`;
                   if (label.includes('Rain Probability')) return `${value} % rain`;
-                  if (label.includes('Rainfall')) return `${value} mm rain`;
+                  if (label.includes('Rainfall')) return `${value} mm/h rain`;
                   return `${label}: ${value}`;
                 }
               }
