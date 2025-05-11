@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weather charts</title>
+  <title>Weather Charts</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -189,6 +189,17 @@
             },
             tooltip: {
               callbacks: {
+                title: function(ctx) {
+                  const index = ctx[0].dataIndex;
+                  const rawDate = hours[index]; // `hours` must be available in this scope
+                  const date = new Date(rawDate);
+                  return date.toLocaleString('en-AU', {
+                    weekday: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  });
+                },
                 label: function(ctx) {
                   const label = ctx.dataset.label || '';
                   const value = ctx.formattedValue;
@@ -218,7 +229,7 @@
                   const index = ctx.tick?.value;
                   if (index !== undefined && hours[index]) {
                     const hour = new Date(hours[index]).getHours();
-                    return hour === 0 ? '#666' : 'transparent';
+                    return hour === 0 ? '#666' : hour === 12 ? '#333' : 'transparent';
                   }
                   return 'transparent';
                 }
