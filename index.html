@@ -93,7 +93,7 @@
       return labels;
     }
 
-    function createChart(container, location, hours, temp, humidity, wind, cloudCover, rainProb, rainAmount, isFirst) {
+    function createChart(container, location, hours, temp, humidity, wind, cloudCover, rainProb, rainAmount) {
       const wrapper = document.createElement('div');
       wrapper.style.display = 'flex';
       wrapper.style.alignItems = 'center';
@@ -194,16 +194,7 @@
           stacked: false,
           plugins: {
             title: { display: false },
-            legend: {
-              display: isFirst,
-              labels: {
-                usePointStyle: false,
-                pointStyle: 'line',
-                boxWidth: 5,
-                borderRadius: 0,
-                color: '#fff'
-              }
-            },
+            legend: { display: false },
             tooltip: {
               callbacks: {
                 title: function(ctx) {
@@ -297,7 +288,6 @@
 
     async function loadAllCharts() {
       const container = document.getElementById('charts');
-      let first = true;
       for (const [name, { lat, lon }] of Object.entries(locations)) {
         const data = await fetchWeather(name, lat, lon);
         if (!data) continue;
@@ -310,10 +300,8 @@
           data.hourly.wind_speed_10m,
           data.hourly.cloud_cover,
           data.hourly.precipitation_probability,
-          data.hourly.precipitation,
-          first
+          data.hourly.precipitation
         );
-        first = false;
       }
     }
 
