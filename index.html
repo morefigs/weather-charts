@@ -32,7 +32,7 @@
       "Bungonia": { lat: -34.8573, lon: 149.9432 },
       "Natimuk": { lat: -36.7421, lon: 141.9413 },
 
-      "Orange": { lat: -33.2833, lon: 149.1000 },
+      "Orange": { lat: -33.2816, lon: 149.0862 },
       "Narooma": { lat: -36.2193, lon: 150.1324 },
 
       "Byron Bay": { lat: -28.6534, lon: 153.5334 },
@@ -69,7 +69,7 @@
       const cached = getCachedWeather(cacheKey);
       if (cached) return cached;
 
-      const response = await fetch(`https://api.open-meteo.com/v1/forecast?models=bom_access_global&latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,cloud_cover,precipitation_probability,precipitation&forecast_days=10&timezone=Australia/Sydney`);
+      const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,cloud_cover,precipitation_probability,precipitation&past_days=1&forecast_days=16&timezone=Australia/Sydney`);
 
       const data = await response.json();
       if (!data.hourly || !data.hourly.temperature_2m) {
@@ -85,7 +85,7 @@
       const options = { weekday: 'short', day: 'numeric' };
       for (let i = 0; i < hours.length; i++) {
         const date = new Date(hours[i]);
-        labels[i] = date.getHours() === 12 ?  date.toLocaleString('en-AU', options) : '';
+        labels[i] = date.getHours() === 12 ? date.toLocaleString('en-AU', options) : '';
       }
       return labels;
     }
@@ -105,7 +105,7 @@
 
       const canvas = document.createElement('canvas');
       canvas.width = 1000;
-      canvas.height = 200;
+      canvas.height = 150;
 
       wrapper.appendChild(label);
       wrapper.appendChild(canvas);
@@ -308,10 +308,10 @@
         if (!windDir) return;
 
         windSpeed.data.forEach((point, i) => {
-          if (!windDir[i] || !point) return;
+          if (!windDir[i] || !point || i % 2 === 0) return;
 
           ctx.save();
-          ctx.fillStyle = 'rgba(255,255,255,0.8)';
+          ctx.fillStyle = 'rgba(255,255,255,0.7)';
           ctx.translate(point.x, point.y);
           ctx.rotate(windDir[i] * Math.PI / 180);
           ctx.beginPath();
