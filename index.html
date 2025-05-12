@@ -233,10 +233,18 @@
                 drawOnChartArea: true,
                 color: (ctx) => {
                   const index = ctx.tick?.value;
-                  if (index !== undefined && hours[index]) {
-                    const hour = new Date(hours[index]).getHours();
-                    return hour === 0 ? '#666' : hour === 12 ? '#333' : 'transparent';
-                  }
+                  if (index === undefined || !hours[index]) return 'transparent';
+
+                  const tickTime = new Date(hours[index]);
+                  const now = new Date();
+                  const diffMinutes = Math.abs((tickTime - now) / 60000);
+
+                  // Highlight the tick closest to current time (within 30 minutes)
+                  if (diffMinutes < 30) return '#fff';
+
+                  const hour = tickTime.getHours();
+                  if (hour === 0) return '#666';
+                  if (hour === 12) return '#333';
                   return 'transparent';
                 }
               }
