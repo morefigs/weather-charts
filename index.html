@@ -240,7 +240,7 @@
                   const diffMinutes = Math.abs((tickTime - now) / 60000);
 
                   // Highlight the tick closest to current time (within 30 minutes)
-                  if (diffMinutes < 30) return '#fff';
+                  if (diffMinutes < 30) return '#ff0';
 
                   const hour = tickTime.getHours();
                   if (hour === 0) return '#666';
@@ -321,7 +321,7 @@
           ctx.save();
           ctx.fillStyle = 'rgba(255,255,255,0.7)';
           ctx.translate(point.x, point.y);
-          ctx.rotate(windDir[i] * Math.PI / 180);
+          ctx.rotate((windDir[i] + 180) * Math.PI / 180);
           ctx.beginPath();
           ctx.moveTo(0, -7);
           ctx.lineTo(-4, 7);
