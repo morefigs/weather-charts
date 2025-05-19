@@ -85,7 +85,16 @@
       const options = { weekday: 'short', day: 'numeric' };
       for (let i = 0; i < hours.length; i++) {
         const date = new Date(hours[i]);
-        labels[i] = date.getHours() === 12 ? date.toLocaleString('en-AU', options) : '';
+        if (date.getHours() === 12) {
+          let label = date.toLocaleString('en-AU', options);
+          const day = date.getDay();
+          if (day === 0 || day === 6) {  // Sunday or Saturday
+            label = label.toUpperCase();
+          }
+          labels[i] = label;
+        } else {
+          labels[i] = '';
+        }
       }
       return labels;
     }
