@@ -3,6 +3,7 @@ const locations = {
     "Lithgow": { lat: -33.4811, lon: 150.1368 },
     "Sydney": { lat: -33.8688, lon: 151.2093 },
     "Nowra": { lat: -34.8871, lon: 150.6005 },
+    "Point Perp" :{ lat: -35.0936, lon: 150.8053 },
     "Bungonia": { lat: -34.8573, lon: 149.9432 },
     "Natimuk": { lat: -36.7421, lon: 141.9413 },
 
@@ -41,9 +42,9 @@ function cacheWeather(key, data) {
 async function fetchWeather(name, lat, lon) {
     const cacheKey = `weather-charts-data-${name}`;
     const cached = getCachedWeather(cacheKey);
-    if (cached) return cached;
+    // if (cached) return cached;
 
-    const response = await fetch(`https://api.open-meteo.com/v1/forecast?models=bom_access_global&latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,cloud_cover,precipitation_probability,precipitation&past_days=2&forecast_days=10&timezone=Australia/Sydney`);
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,cloud_cover,precipitation_probability,precipitation&past_days=3&forecast_days=16&timezone=Australia/Sydney`);
 
     const data = await response.json();
     if (!data.hourly || !data.hourly.temperature_2m) {
