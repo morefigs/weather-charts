@@ -42,9 +42,9 @@ function cacheWeather(key, data) {
 async function fetchWeather(name, lat, lon) {
     const cacheKey = `weather-charts-data-${name}`;
     const cached = getCachedWeather(cacheKey);
-    // if (cached) return cached;
+    if (cached) return cached;
 
-    const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,cloud_cover,precipitation_probability,precipitation&past_days=3&forecast_days=16&timezone=Australia/Sydney`);
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?models=bom_access_global&latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,cloud_cover,precipitation_probability,precipitation&past_days=2&forecast_days=10&timezone=Australia/Sydney`);
 
     const data = await response.json();
     if (!data.hourly || !data.hourly.temperature_2m) {
