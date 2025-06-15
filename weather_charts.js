@@ -341,3 +341,8 @@ async function loadAllCharts() {
 }
 
 loadAllCharts();
+
+// Automatically reload the page every hour
+setInterval(() => {
+    location.reload();
+}, 3600 * 1000);
