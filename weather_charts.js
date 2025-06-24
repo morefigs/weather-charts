@@ -8,6 +8,7 @@ const locations = {
     "Natimuk": { lat: -36.7421, lon: 141.9413 },
 
     "Orange": { lat: -33.2816, lon: 149.0862 },
+    "Stromlo": { lat: -35.3318, lon: 149.0088 },
     "Narooma": { lat: -36.2193, lon: 150.1324 },
 
     "Byron Bay": { lat: -28.6534, lon: 153.5334 },
