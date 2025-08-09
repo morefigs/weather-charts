@@ -1,7 +1,7 @@
 const locations = {
     "Blackheath": { lat: -33.6356, lon: 150.2852 },
     "Sydney": { lat: -33.8688, lon: 151.2093 },
-    "Lithgow": { lat: -33.4811, lon: 150.1368 },
+    "Newnes Plateau": { lat: -33.3482, lon: 150.2800 },
     "Nowra": { lat: -34.8871, lon: 150.6005 },
     "Point Perpendicular" :{ lat: -35.0936, lon: 150.8053 },
     "Bungonia": { lat: -34.8573, lon: 149.9432 },
