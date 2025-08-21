@@ -56,6 +56,15 @@ async function fetchWeather(name, lat, lon) {
     return data;
 }
 
+function computeAbsoluteHumidity(tempC, rh) {
+    // Saturation vapor pressure (hPa)
+    const es = 6.112 * Math.exp((17.67 * tempC) / (tempC + 243.5));
+    // Actual vapor pressure (hPa)
+    const e = (rh / 100) * es;
+    // Absolute humidity (g/m³)
+    return (2.1674 * e) / (tempC + 273.15) * 100;  // convert hPa to Pa
+}
+
 function formatLabels(hours) {
     const labels = [];
     const options = { weekday: 'short', day: 'numeric' };
@@ -92,6 +101,8 @@ function createChart(container, location, hours, temp, humidity, wind, windDir, 
     canvas.width = 1000;
     canvas.height = 150;
 
+    const absHumidity = temp.map((t, i) => computeAbsoluteHumidity(t, humidity[i]));
+
     wrapper.appendChild(label);
     wrapper.appendChild(canvas);
     container.appendChild(wrapper);
@@ -109,18 +120,7 @@ function createChart(container, location, hours, temp, humidity, wind, windDir, 
                 yAxisID: 'y_0_40',
                 pointRadius: 0,
                 fill: false,
-                backgroundColor: 'rgb(255,145,0)'
-            },
-            {
-                label: 'Relative humidity (%)',
-                type: 'line',
-                data: humidity,
-                borderColor: 'rgb(35,186,0)',
-                borderWidth: 2,
-                yAxisID: 'y_0_100',
-                pointRadius: 0,
-                fill: false,
-                backgroundColor: 'rgb(35,186,0)'
+                backgroundColor: 'rgb(50,50,50)'
             },
             {
                 label: 'Wind speed (km/h)',
@@ -131,8 +131,20 @@ function createChart(container, location, hours, temp, humidity, wind, windDir, 
                 yAxisID: 'y_0_40',
                 pointRadius: 0,
                 fill: false,
-                backgroundColor: 'rgba(255,255,255,0.5)'
+                backgroundColor: 'rgb(50,50,50)'
             },
+            {
+                label: 'Relative humidity (%)',
+                type: 'line',
+                data: humidity,
+                borderColor: 'rgb(35,186,0)',
+                borderWidth: 2,
+                yAxisID: 'y_0_100',
+                pointRadius: 0,
+                fill: false,
+                backgroundColor: 'rgb(50,50,50)'
+            },
+
             {
                 label: 'Cloud cover (%)',
                 type: 'line',
@@ -163,6 +175,17 @@ function createChart(container, location, hours, temp, humidity, wind, windDir, 
                 borderSkipped: false,
                 barPercentage: 0.75,
                 categoryPercentage: 1.0
+            },
+            {
+                label: 'Absolute humidity (g/m³)',
+                type: 'line',
+                data: absHumidity,
+                borderColor: 'rgb(0,0,0)',
+                borderWidth: 2,
+                yAxisID: 'y_0_40',
+                pointRadius: 0,
+                fill: false,
+                backgroundColor: 'rgb(50,50,50)'
             }
         ]
     };
@@ -193,10 +216,11 @@ function createChart(container, location, hours, temp, humidity, wind, windDir, 
                         label: function (ctx) {
                             const label = ctx.dataset.label || '';
                             const value = ctx.formattedValue;
-                            if (label.includes('Temperature')) return `${Math.round(value)} °C`;
-                            if (label.includes('Relative humidity')) return `${value}% RH`;
+                            if (label.includes('Temperature')) return `${Number(value).toFixed(1)} °C`;
                             if (label.includes('Wind speed')) return `${Math.round(value)} km/h wind`;
-                            if (label.includes('Wind direction')) return `${value} °`;
+                            // if (label.includes('Wind direction')) return `${value} °`;
+                            if (label.includes('Relative humidity')) return `${value}% RH`;
+                            if (label.includes('Absolute humidity')) return `${Number(value).toFixed(1)} g/m³ AH`;
                             if (label.includes('Cloud cover')) return `${value}% cloud`;
                             if (label.includes('Rain probability')) return `${value}% rain`;
                             if (label.includes('Rainfall')) return `${value} mm/h rain`;
@@ -239,7 +263,7 @@ function createChart(container, location, hours, temp, humidity, wind, windDir, 
                     position: 'left',
                     title: {
                         display: true,
-                        text: 'Temperature (°C) / Wind (km/h)',
+                        text: 'Temperature (°C) / Wind (km/h) / AH (g/m³)',
                         color: '#fff'
                     },
                     min: 0,
@@ -262,7 +286,7 @@ function createChart(container, location, hours, temp, humidity, wind, windDir, 
                     offset: false,
                     title: {
                         display: true,
-                        text: 'Relative humidity (%) / Cloud cover (%) / Rain probability (%)',
+                        text: 'RH (%) / Cloud cover (%) / Rain probability (%)',
                         color: '#fff'
                     },
                     min: 0,
@@ -296,7 +320,7 @@ const windDirectionArrowsPlugin = {
         if (!chart.options.plugins.windDirectionArrows) return;
 
         const ctx = chart.ctx;
-        const windSpeed = chart.getDatasetMeta(2);  // wind speed dataset
+        const windSpeed = chart.getDatasetMeta(1);  // wind speed dataset
         const windDir = chart.config.data.windDirection;
         if (!windDir) return;
 
