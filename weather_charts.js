@@ -227,7 +227,7 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
 
     // Only add snowfall dataset if there's at least one non-zero value
     if (snowFall.some(v => v > 0)) {
-        chartData.datasets.splice(4, 0,{
+        chartData.datasets.splice(5, 0,{
             label: 'Snowfall (cm/h)',
             type: 'bar',
             data: snowFall,
