@@ -45,7 +45,29 @@ async function fetchWeather(name, lat, lon) {
     const cached = getCachedWeather(cacheKey);
     if (cached) return cached;
 
-    const response = await fetch(`https://api.open-meteo.com/v1/forecast?models=ecmwf_ifs025&latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,cloud_cover,precipitation_probability,precipitation&past_days=2&forecast_days=15&timezone=Australia/Sydney`);
+    const baseUrl = "https://api.open-meteo.com/v1/forecast";
+    const params = new URLSearchParams({
+        models: "ecmwf_ifs025",
+        latitude: lat,
+        longitude: lon,
+        hourly: [
+            "temperature_2m",
+            "apparent_temperature",
+            "relative_humidity_2m",
+            "wind_speed_10m",
+            "wind_direction_10m",
+            "cloud_cover",
+            "precipitation_probability",
+            "precipitation",
+            "snowfall"
+        ].join(","),
+        past_days: 2,
+        forecast_days: 15,
+        timezone: "Australia/Sydney"
+    });
+    const url = `${baseUrl}?${params.toString()}`;
+    const response = await fetch(url);
+
 
     const data = await response.json();
     if (!data.hourly || !data.hourly.temperature_2m) {
@@ -84,7 +106,8 @@ function formatLabels(hours) {
     return labels;
 }
 
-function createChart(container, location, hours, temp, humidity, wind, windDir, cloudCover, rainProb, rainAmount) {
+function createChart(container, location, hours, temp, apparent, humidity, wind, windDir, cloudCover, rainProb,
+                     rainFall, snowFall) {
     const wrapper = document.createElement('div');
     wrapper.style.display = 'flex';
     wrapper.style.alignItems = 'center';
@@ -123,6 +146,18 @@ function createChart(container, location, hours, temp, humidity, wind, windDir, 
                 backgroundColor: 'rgb(50,50,50)'
             },
             {
+                label: 'Apparent (°C)',
+                type: 'line',
+                data: apparent,
+                borderColor: 'rgb(255,200,0)',
+                borderWidth: 2,
+                borderDash: [4, 4],
+                yAxisID: 'y_0_40',
+                pointRadius: 0,
+                fill: false,
+                backgroundColor: 'rgb(50,50,50)'
+            },
+            {
                 label: 'Wind speed (km/h)',
                 type: 'line',
                 data: wind,
@@ -144,7 +179,17 @@ function createChart(container, location, hours, temp, humidity, wind, windDir, 
                 fill: false,
                 backgroundColor: 'rgb(50,50,50)'
             },
-
+            {
+                label: 'Rainfall (mm/h)',
+                type: 'bar',
+                data: rainFall,
+                borderColor: 'deepskyblue',
+                backgroundColor: 'deepskyblue',
+                yAxisID: 'y_0_5',
+                borderSkipped: false,
+                barPercentage: 1.0,
+                categoryPercentage: 1.0
+            },
             {
                 label: 'Cloud cover (%)',
                 type: 'line',
@@ -166,17 +211,6 @@ function createChart(container, location, hours, temp, humidity, wind, windDir, 
                 backgroundColor: 'rgba(0,111,255,0.45)'
             },
             {
-                label: 'Rainfall (mm/h)',
-                type: 'bar',
-                data: rainAmount,
-                borderColor: 'deepskyblue',
-                backgroundColor: 'deepskyblue',
-                yAxisID: 'y_0_5',
-                borderSkipped: false,
-                barPercentage: 0.75,
-                categoryPercentage: 1.0
-            },
-            {
                 label: 'Absolute humidity (g/m³)',
                 type: 'line',
                 data: absHumidity,
@@ -189,6 +223,21 @@ function createChart(container, location, hours, temp, humidity, wind, windDir, 
             }
         ]
     };
+
+    // Only add snowfall dataset if there's at least one non-zero value
+    if (snowFall.some(v => v > 0)) {
+        chartData.datasets.splice(4, 0,{
+            label: 'Snowfall (cm/h)',
+            type: 'bar',
+            data: snowFall,
+            borderColor: 'pink',
+            backgroundColor: 'red',
+            yAxisID: 'y_0_5',
+            borderSkipped: false,
+            barPercentage: 2.0,
+            categoryPercentage: 1.0
+        });
+    }
 
     new Chart(canvas.getContext('2d'), {
         data: chartData,
@@ -217,13 +266,15 @@ function createChart(container, location, hours, temp, humidity, wind, windDir, 
                             const label = ctx.dataset.label || '';
                             const value = ctx.formattedValue;
                             if (label.includes('Temperature')) return `${Number(value).toFixed(1)} °C`;
+                            if (label.includes('Apparent')) return `${Number(value).toFixed(1)} °C apparent`;
                             if (label.includes('Wind speed')) return `${Math.round(value)} km/h wind`;
                             // if (label.includes('Wind direction')) return `${value} °`;
                             if (label.includes('Relative humidity')) return `${value}% RH`;
-                            if (label.includes('Absolute humidity')) return `${Number(value).toFixed(1)} g/m³ AH`;
+                            if (label.includes('Rainfall')) return `${value} mm/h rain`;
+                            if (label.includes('Snowfall')) return `${value} cm/h snow`;
                             if (label.includes('Cloud cover')) return `${value}% cloud`;
                             if (label.includes('Rain probability')) return `${value}% rain`;
-                            if (label.includes('Rainfall')) return `${value} mm/h rain`;
+                            if (label.includes('Absolute humidity')) return `${Number(value).toFixed(1)} g/m³ AH`;
                             return `${label}: ${value}`;
                         }
                     }
@@ -300,7 +351,7 @@ function createChart(container, location, hours, temp, humidity, wind, windDir, 
                     offset: false,
                     title: {
                         display: true,
-                        text: 'Rainfall (mm/h)',
+                        text: 'Rainfall (mm/h) / Snowfall (cm/h)',
                         color: '#fff'
                     },
                     min: 0,
@@ -320,7 +371,7 @@ const windDirectionArrowsPlugin = {
         if (!chart.options.plugins.windDirectionArrows) return;
 
         const ctx = chart.ctx;
-        const windSpeed = chart.getDatasetMeta(1);  // wind speed dataset
+        const windSpeed = chart.getDatasetMeta(2);  // wind speed dataset
         const windDir = chart.config.data.windDirection;
         if (!windDir) return;
 
@@ -355,12 +406,14 @@ async function loadAllCharts() {
             name,
             data.hourly.time,
             data.hourly.temperature_2m,
+            data.hourly.apparent_temperature,
             data.hourly.relative_humidity_2m,
             data.hourly.wind_speed_10m,
             data.hourly.wind_direction_10m,
             data.hourly.cloud_cover,
             data.hourly.precipitation_probability,
-            data.hourly.precipitation
+            data.hourly.precipitation,
+            data.hourly.snowfall
         );
     }
 }
