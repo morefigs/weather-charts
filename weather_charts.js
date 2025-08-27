@@ -188,7 +188,8 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
                 yAxisID: 'y_0_5',
                 borderSkipped: false,
                 barPercentage: 0.75,
-                categoryPercentage: 1.0
+                categoryPercentage: 1.0,
+                stack: 'overlay'
             },
             {
                 label: 'Cloud cover (%)',
@@ -230,12 +231,13 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
             label: 'Snowfall (cm/h)',
             type: 'bar',
             data: snowFall,
-            borderColor: 'pink',
+            borderColor: 'red',
             backgroundColor: 'red',
             yAxisID: 'y_0_5',
             borderSkipped: false,
-            barPercentage: 2.0,
-            categoryPercentage: 1.0
+            barPercentage: 0.75,
+            categoryPercentage: 1.0,
+            stack: 'overlay'
         });
     }
 
