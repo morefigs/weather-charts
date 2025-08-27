@@ -187,7 +187,7 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
                 backgroundColor: 'deepskyblue',
                 yAxisID: 'y_0_5',
                 borderSkipped: false,
-                barPercentage: 1.0,
+                barPercentage: 0.75,
                 categoryPercentage: 1.0
             },
             {
