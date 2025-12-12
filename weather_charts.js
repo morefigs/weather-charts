@@ -1,3 +1,6 @@
+// const model = "default";
+const model = "ecmwf_ifs025";
+
 const locations = {
     "Blackheath": { lat: -33.6356, lon: 150.2852 },
     "Sydney": { lat: -33.8688, lon: 151.2093 },
@@ -40,14 +43,14 @@ function cacheWeather(key, data) {
     );
 }
 
-async function fetchWeather(name, lat, lon) {
-    const cacheKey = `weather-charts-data-${name}`;
+async function fetchWeather(model, name, lat, lon) {
+    const cacheKey = `weather-charts-data-${model}-${name}`;
     const cached = getCachedWeather(cacheKey);
     if (cached) return cached;
 
     const baseUrl = "https://api.open-meteo.com/v1/forecast";
     const params = new URLSearchParams({
-        models: "ecmwf_ifs025",
+        ...(model === "default" ? {} : { models: model }),
         latitude: lat,
         longitude: lon,
         hourly: [
@@ -67,7 +70,6 @@ async function fetchWeather(name, lat, lon) {
     });
     const url = `${baseUrl}?${params.toString()}`;
     const response = await fetch(url);
-
 
     const data = await response.json();
     if (!data.hourly || !data.hourly.temperature_2m) {
@@ -401,7 +403,7 @@ Chart.register(windDirectionArrowsPlugin);
 async function loadAllCharts() {
     const container = document.getElementById('charts');
     for (const [name, { lat, lon }] of Object.entries(locations)) {
-        const data = await fetchWeather(name, lat, lon);
+        const data = await fetchWeather(model, name, lat, lon);
         if (!data) continue;
         createChart(
             container,
