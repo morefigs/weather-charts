@@ -182,6 +182,17 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
                 backgroundColor: 'rgb(50,50,50)'
             },
             {
+                label: 'Absolute humidity (g/m³)',
+                type: 'line',
+                data: absHumidity,
+                borderColor: 'rgb(181,78,216)',
+                borderWidth: 2,
+                yAxisID: 'y_0_40',
+                pointRadius: 0,
+                fill: false,
+                backgroundColor: 'rgb(50,50,50)'
+            },
+            {
                 label: 'Rainfall (mm/h)',
                 type: 'bar',
                 data: rainFall,
@@ -212,17 +223,6 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
                 pointRadius: 0,
                 fill: true,
                 backgroundColor: 'rgba(0,111,255,0.45)'
-            },
-            {
-                label: 'Absolute humidity (g/m³)',
-                type: 'line',
-                data: absHumidity,
-                borderColor: 'rgb(0,0,0)',
-                borderWidth: 2,
-                yAxisID: 'y_0_40',
-                pointRadius: 0,
-                fill: false,
-                backgroundColor: 'rgb(50,50,50)'
             }
         ]
     };
@@ -274,11 +274,11 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
                             if (label.includes('Wind speed')) return `${Math.round(value)} km/h wind`;
                             // if (label.includes('Wind direction')) return `${value} °`;
                             if (label.includes('Relative humidity')) return `${value}% RH`;
+                            if (label.includes('Absolute humidity')) return `${Number(value).toFixed(1)} g/m³ AH`;
                             if (label.includes('Rainfall')) return `${value} mm/h rain`;
                             if (label.includes('Snowfall')) return `${value} cm/h snow`;
                             if (label.includes('Cloud cover')) return `${value}% cloud`;
                             if (label.includes('Rain probability')) return `${value}% rain`;
-                            if (label.includes('Absolute humidity')) return `${Number(value).toFixed(1)} g/m³ AH`;
                             return `${label}: ${value}`;
                         }
                     }
