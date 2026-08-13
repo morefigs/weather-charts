@@ -32,9 +32,25 @@ function setupModelSelect() {
     ).join('');
     select.value = getSelectedModel();
 
-    select.addEventListener('change', () => {
+    function applyModel() {
         setSelectedModel(select.value);
         renderSavedLocations();  // reload charts under the newly chosen model
+    }
+
+    select.addEventListener('change', applyModel);
+
+    // Respond to up/down immediately without waiting for the dropdown to open/close or a click to confirm the selection
+    select.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+        e.preventDefault();
+        const delta = e.key === 'ArrowDown' ? 1 : -1;
+        const nextIndex = Math.min(
+            Math.max(select.selectedIndex + delta, 0),
+            select.options.length - 1
+        );
+        if (nextIndex === select.selectedIndex) return;
+        select.selectedIndex = nextIndex;
+        applyModel();
     });
 }
 
@@ -359,6 +375,7 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
         data: chartData,
         options: {
             responsive: true,
+            animation: false,
             interaction: {mode: 'index', intersect: false},
             stacked: false,
             plugins: {
