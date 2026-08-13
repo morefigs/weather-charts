@@ -18,32 +18,32 @@ async function searchLocations(query) {
     return data.results || [];
 }
 
-function getSavedLocations(key) {
-    const raw = localStorage.getItem(key);
+function getSavedLocations() {
+    const raw = localStorage.getItem(LOCATIONS_KEY);
     if (raw !== null) return JSON.parse(raw);
 
     // First visit shows default cities
-    localStorage.setItem(key, JSON.stringify(defaultLocations));
+    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(defaultLocations));
     return defaultLocations;
 }
 
-function saveLocation(loc, key) {
-    const saved = getSavedLocations(key);
+function saveLocation(loc) {
+    const saved = getSavedLocations();
     // avoid duplicates
     if (saved.some(l => l.latitude === loc.latitude && l.longitude === loc.longitude)) return;
     saved.push({ name: loc.name, country: loc.country, latitude: loc.latitude, longitude: loc.longitude });
-    localStorage.setItem(key, JSON.stringify(saved));
-    renderSavedLocations(key);
-}
-
-function removeLocation(index, key) {
-    const saved = getSavedLocations();
-    saved.splice(index, 1);
-    localStorage.setItem(key, JSON.stringify(saved));
+    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(saved));
     renderSavedLocations();
 }
 
-function setupLocationSearch(key) {
+function removeLocation(index) {
+    const saved = getSavedLocations();
+    saved.splice(index, 1);
+    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(saved));
+    renderSavedLocations();
+}
+
+function setupLocationSearch() {
     const searchInput = document.getElementById('location-search');
     const resultsDiv = document.getElementById('search-results');
     const addBtn = document.getElementById('add-location-btn');
@@ -63,7 +63,7 @@ function setupLocationSearch(key) {
             ).join('');
             resultsDiv.querySelectorAll('.result-item').forEach((el, i) => {
                 el.addEventListener('click', () => {
-                    saveLocation(currentResults[i], key);
+                    saveLocation(currentResults[i]);
                     currentResults = [];
                     searchInput.value = '';
                     resultsDiv.innerHTML = '';
@@ -87,8 +87,8 @@ function setupLocationSearch(key) {
     });
 }
 
-function renderSavedLocations(key) {
-    const saved = getSavedLocations(key);
+function renderSavedLocations() {
+    const saved = getSavedLocations();
     const container = document.getElementById('saved-locations');
     if (container) {
         container.innerHTML = saved.map((loc, i) =>
@@ -509,8 +509,8 @@ async function loadAllCharts(locationsList) {
 }
 
 // Wire up search input, then do the initial render (search UI + saved chips + charts)
-setupLocationSearch(LOCATIONS_KEY);
-renderSavedLocations(LOCATIONS_KEY);
+setupLocationSearch();
+renderSavedLocations();
 
 // Automatically reload the page every hour
 setInterval(() => {
