@@ -1,22 +1,107 @@
 // const model = "default";
 const model = "ecmwf_ifs025";
 
-const locations = {
-    "Blackheath": { lat: -33.6356, lon: 150.2852 },
-    "Sydney": { lat: -33.8688, lon: 151.2093 },
-    "Newnes Plateau": { lat: -33.3482, lon: 150.2800 },
-    "Nowra": { lat: -34.8871, lon: 150.6005 },
-    "Point Perpendicular" :{ lat: -35.0936, lon: 150.8053 },
-    "Bungonia": { lat: -34.8573, lon: 149.9432 },
-    "Natimuk": { lat: -36.7421, lon: 141.9413 },
+const LOCATIONS_KEY = 'weather-charts-locations';
 
-    "Orange": { lat: -33.2816, lon: 149.0862 },
-    "Stromlo": { lat: -35.3318, lon: 149.0088 },
-    "Narooma": { lat: -36.2193, lon: 150.1324 },
+// Used only to seed localStorage the first time someone loads the page
+// After that, everything comes from localStorage and this is never read again
+const defaultLocations = [
+    { name: "Gustavia", latitude: 17.89618, longitude: -62.84978 },
+    { name: "Auckland", latitude: -36.84853, longitude: 174.76349 },
+    { name: "Munich", latitude: 48.13743, longitude: 11.57549 }
+];
 
-    "Byron Bay": { lat: -28.6534, lon: 153.5334 },
-    "Brisbane": { lat: -27.4705, lon: 153.0260 }
-};
+async function searchLocations(query) {
+    if (query.length < 2) return [];
+    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10`);
+    const data = await res.json();
+    return data.results || [];
+}
+
+function getSavedLocations(key) {
+    const raw = localStorage.getItem(key);
+    if (raw !== null) return JSON.parse(raw);
+
+    // First visit shows default cities
+    localStorage.setItem(key, JSON.stringify(defaultLocations));
+    return defaultLocations;
+}
+
+function saveLocation(loc, key) {
+    const saved = getSavedLocations(key);
+    // avoid duplicates
+    if (saved.some(l => l.latitude === loc.latitude && l.longitude === loc.longitude)) return;
+    saved.push({ name: loc.name, country: loc.country, latitude: loc.latitude, longitude: loc.longitude });
+    localStorage.setItem(key, JSON.stringify(saved));
+    renderSavedLocations(key);
+}
+
+function removeLocation(index, key) {
+    const saved = getSavedLocations();
+    saved.splice(index, 1);
+    localStorage.setItem(key, JSON.stringify(saved));
+    renderSavedLocations();
+}
+
+function setupLocationSearch(key) {
+    const searchInput = document.getElementById('location-search');
+    const resultsDiv = document.getElementById('search-results');
+    const addBtn = document.getElementById('add-location-btn');
+    if (!searchInput || !resultsDiv) return;  // controls not present on this page
+
+    let debounceTimer;
+    let currentResults = [];
+
+    searchInput.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+            currentResults = await searchLocations(searchInput.value);
+            resultsDiv.innerHTML = currentResults.map((r, i) =>
+                `<div class="result-item" data-index="${i}" style="cursor:pointer;padding:4px;">
+             ${r.name}, ${r.admin1 || ''} ${r.country}
+           </div>`
+            ).join('');
+            resultsDiv.querySelectorAll('.result-item').forEach((el, i) => {
+                el.addEventListener('click', () => {
+                    saveLocation(currentResults[i], key);
+                    currentResults = [];
+                    searchInput.value = '';
+                    resultsDiv.innerHTML = '';
+                });
+            });
+        }, 300);
+    });
+
+    // Add button / Enter key: save the top search result
+    function addTopResult() {
+        if (currentResults.length === 0) return;
+        saveLocation(currentResults[0]);
+        currentResults = [];
+        searchInput.value = '';
+        resultsDiv.innerHTML = '';
+    }
+
+    if (addBtn) addBtn.addEventListener('click', addTopResult);
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addTopResult();
+    });
+}
+
+function renderSavedLocations(key) {
+    const saved = getSavedLocations(key);
+    const container = document.getElementById('saved-locations');
+    if (container) {
+        container.innerHTML = saved.map((loc, i) =>
+            `<span style="display:inline-block;background:#333;padding:5px 10px;margin:3px;border-radius:12px;">
+           ${loc.name} <button data-index="${i}" class="remove-btn" style="margin-left:5px;">×</button>
+         </span>`
+        ).join('');
+        container.querySelectorAll('.remove-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => removeLocation(Number(e.target.dataset.index)));
+        });
+    }
+    loadAllCharts(saved);
+}
 
 function getCachedWeather(key) {
     const cached = localStorage.getItem(key);
@@ -44,8 +129,8 @@ function cacheWeather(key, data) {
 }
 
 async function fetchWeather(model, name, lat, lon) {
-    const cacheKey = `weather-charts-data-${model}-${name}`;
-    const cached = getCachedWeather(cacheKey);
+    const key = `weather-charts-data-${model}-${name}`;
+    const cached = getCachedWeather(key);
     if (cached) return cached;
 
     const baseUrl = "https://api.open-meteo.com/v1/forecast";
@@ -76,7 +161,7 @@ async function fetchWeather(model, name, lat, lon) {
         console.error('Missing expected data for', lat, lon, data);
         return null;
     }
-    cacheWeather(cacheKey, data);
+    cacheWeather(key, data);
     return data;
 }
 
@@ -400,14 +485,15 @@ const windDirectionArrowsPlugin = {
 // Register the plugin globally
 Chart.register(windDirectionArrowsPlugin);
 
-async function loadAllCharts() {
+async function loadAllCharts(locationsList) {
     const container = document.getElementById('charts');
-    for (const [name, { lat, lon }] of Object.entries(locations)) {
-        const data = await fetchWeather(model, name, lat, lon);
+    container.innerHTML = '';  // clear previous charts before redrawing
+    for (const loc of locationsList) {
+        const data = await fetchWeather(model, loc.name, loc.latitude, loc.longitude);
         if (!data) continue;
         createChart(
             container,
-            name,
+            loc.name,
             data.hourly.time,
             data.hourly.temperature_2m,
             data.hourly.apparent_temperature,
@@ -422,7 +508,9 @@ async function loadAllCharts() {
     }
 }
 
-loadAllCharts();
+// Wire up search input, then do the initial render (search UI + saved chips + charts)
+setupLocationSearch(LOCATIONS_KEY);
+renderSavedLocations(LOCATIONS_KEY);
 
 // Automatically reload the page every hour
 setInterval(() => {
