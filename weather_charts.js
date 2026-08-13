@@ -1,15 +1,42 @@
-// const model = "default";
-const model = "ecmwf_ifs025";
-
 const LOCATIONS_KEY = 'weather-charts-locations';
-
-// Used only to seed localStorage the first time someone loads the page
-// After that, everything comes from localStorage and this is never read again
-const defaultLocations = [
+const MODEL_KEY = 'weather-charts-model';
+const DEFAULT_LOCATIONS = [
     { name: "Gustavia", latitude: 17.89618, longitude: -62.84978 },
     { name: "Auckland", latitude: -36.84853, longitude: 174.76349 },
     { name: "Munich", latitude: 48.13743, longitude: 11.57549 }
 ];
+const MODEL_OPTIONS = [
+    { value: 'default', label: 'Auto' },
+    { value: 'ecmwf_ifs025', label: 'ECMWF IFS 0.25°' }
+    // { value: 'gfs_seamless', label: 'GFS (NOAA)' },
+    // { value: 'icon_seamless', label: 'ICON (DWD)' },
+    // { value: 'gem_seamless', label: 'GEM (Canada)' },
+    // { value: 'meteofrance_seamless', label: 'MeteoFrance' },
+    // { value: 'ukmo_seamless', label: 'UKMO' }
+];
+
+function getSelectedModel() {
+    return localStorage.getItem(MODEL_KEY) || 'default';
+}
+
+function setSelectedModel(value) {
+    localStorage.setItem(MODEL_KEY, value);
+}
+
+function setupModelSelect() {
+    const select = document.getElementById('model-select');
+    if (!select) return;  // control not present on this page
+
+    select.innerHTML = MODEL_OPTIONS.map(o =>
+        `<option value="${o.value}">${o.label}</option>`
+    ).join('');
+    select.value = getSelectedModel();
+
+    select.addEventListener('change', () => {
+        setSelectedModel(select.value);
+        renderSavedLocations();  // reload charts under the newly chosen model
+    });
+}
 
 async function searchLocations(query) {
     if (query.length < 2) return [];
@@ -23,8 +50,8 @@ function getSavedLocations() {
     if (raw !== null) return JSON.parse(raw);
 
     // First visit shows default cities
-    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(defaultLocations));
-    return defaultLocations;
+    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(DEFAULT_LOCATIONS));
+    return DEFAULT_LOCATIONS;
 }
 
 function saveLocation(loc) {
@@ -486,6 +513,7 @@ const windDirectionArrowsPlugin = {
 Chart.register(windDirectionArrowsPlugin);
 
 async function loadAllCharts(locationsList) {
+    const model = getSelectedModel();
     const container = document.getElementById('charts');
     container.innerHTML = '';  // clear previous charts before redrawing
     for (const loc of locationsList) {
@@ -508,8 +536,9 @@ async function loadAllCharts(locationsList) {
     }
 }
 
-// Wire up search input, then do the initial render (search UI + saved chips + charts)
+// Wire up search input and model select, then do the initial render (search UI + saved chips + charts)
 setupLocationSearch();
+setupModelSelect();
 renderSavedLocations();
 
 // Automatically reload the page every hour
