@@ -6,13 +6,14 @@ const DEFAULT_LOCATIONS = [
     { name: "Munich", latitude: 48.13743, longitude: 11.57549 }
 ];
 const MODEL_OPTIONS = [
-    { value: 'default', label: 'Auto' },
-    { value: 'ecmwf_ifs025', label: 'ECMWF IFS 0.25°' }
-    // { value: 'gfs_seamless', label: 'GFS (NOAA)' },
-    // { value: 'icon_seamless', label: 'ICON (DWD)' },
-    // { value: 'gem_seamless', label: 'GEM (Canada)' },
-    // { value: 'meteofrance_seamless', label: 'MeteoFrance' },
-    // { value: 'ukmo_seamless', label: 'UKMO' }
+    { value: 'default', label: 'Open-Meteo default ' },
+    { value: 'ecmwf_ifs025', label: 'ECMWF IFS 0.25°' },
+    { value: 'bom_access_global', label: 'BOM (Australia)' },
+    { value: 'gfs_seamless', label: 'GFS (NOAA)' },
+    { value: 'gem_seamless', label: 'GEM (Canada)' },
+    { value: 'icon_seamless', label: 'ICON (DWD)' },
+    { value: 'ukmo_seamless', label: 'UKMO' },
+    { value: 'meteofrance_seamless', label: 'MeteoFrance' }
 ];
 
 function getSelectedModel() {
