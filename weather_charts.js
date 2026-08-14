@@ -6,7 +6,7 @@ const DEFAULT_LOCATIONS = [
     { name: "Munich", latitude: 48.13743, longitude: 11.57549 }
 ];
 const MODEL_OPTIONS = [
-    { value: 'default', label: 'Open-Meteo default ' },
+    { value: 'default', label: 'Open-Meteo best match (default)' },
     { value: 'ecmwf_ifs025', label: 'ECMWF IFS 0.25°' },
     { value: 'bom_access_global', label: 'BOM (Australia)' },
     { value: 'gfs_seamless', label: 'GFS (NOAA)' },
