@@ -1,9 +1,10 @@
 const LOCATIONS_KEY = 'weather-charts-locations';
 const MODEL_KEY = 'weather-charts-model';
 const DEFAULT_LOCATIONS = [
-    { name: "Gustavia", latitude: 17.89618, longitude: -62.84978 },
-    { name: "Auckland", latitude: -36.84853, longitude: 174.76349 },
-    { name: "Munich", latitude: 48.13743, longitude: 11.57549 }
+    { name: "Paris", latitude: 48.85341, longitude: 2.3488 },
+    { name: "London", latitude: 51.50853, longitude: -0.12574 },
+    { name: "Tokyo", latitude: 35.6895, longitude: 139.69171 },
+    { name: "Blackheath", latitude: -33.63567, longitude: 150.28317 }
 ];
 const MODEL_OPTIONS = [
     { value: 'default', label: 'Open-Meteo best match (default)' },
