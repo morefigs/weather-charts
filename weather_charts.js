@@ -1,5 +1,7 @@
 const LOCATIONS_KEY = 'weather-charts-locations';
 const MODEL_KEY = 'weather-charts-model';
+const DAYS_KEY = 'weather-charts-days';
+const DAYS_OPTIONS = [5, 10, 15];
 const DEFAULT_LOCATIONS = [
     { name: "Paris", latitude: 48.85341, longitude: 2.3488 },
     { name: "London", latitude: 51.50853, longitude: -0.12574 },
@@ -53,6 +55,30 @@ function setupModelSelect() {
         if (nextIndex === select.selectedIndex) return;
         select.selectedIndex = nextIndex;
         applyModel();
+    });
+}
+
+function getSelectedDays() {
+    const stored = Number(localStorage.getItem(DAYS_KEY));
+    return DAYS_OPTIONS.includes(stored) ? stored : DAYS_OPTIONS.at(-1);
+}
+
+function setSelectedDays(value) {
+    localStorage.setItem(DAYS_KEY, value);
+}
+
+function setupDaysSelect() {
+    const select = document.getElementById('days-select');
+    if (!select) return;  // control not present on this page
+
+    select.innerHTML = DAYS_OPTIONS.map(d =>
+        `<option value="${d}">${d} days</option>`
+    ).join('');
+    select.value = getSelectedDays();
+
+    select.addEventListener('change', () => {
+        setSelectedDays(Number(select.value));
+        renderSavedLocations();  // reload charts with the new forecast length
     });
 }
 
@@ -173,8 +199,8 @@ function cacheWeather(key, data) {
     );
 }
 
-async function fetchWeather(model, name, lat, lon) {
-    const key = `weather-charts-data-${model}-${name}`;
+async function fetchWeather(model, name, lat, lon, days) {
+    const key = `weather-charts-data-${model}-${name}-${days}`;
     const cached = getCachedWeather(key);
     if (cached) return cached;
 
@@ -195,7 +221,7 @@ async function fetchWeather(model, name, lat, lon) {
             "snowfall"
         ].join(","),
         past_days: 2,
-        forecast_days: 15,
+        forecast_days: days,
         timezone: "Australia/Sydney"
     });
     const url = `${baseUrl}?${params.toString()}`;
@@ -565,10 +591,11 @@ Chart.register(nowLinePlugin);
 
 async function loadAllCharts(locationsList) {
     const model = getSelectedModel();
+    const days = getSelectedDays();
     const container = document.getElementById('charts');
     container.innerHTML = '';  // clear previous charts before redrawing
     for (const loc of locationsList) {
-        const data = await fetchWeather(model, loc.name, loc.latitude, loc.longitude);
+        const data = await fetchWeather(model, loc.name, loc.latitude, loc.longitude, days);
         if (!data) continue;
         createChart(
             container,
@@ -587,8 +614,9 @@ async function loadAllCharts(locationsList) {
     }
 }
 
-// Wire up search input and model select, then do the initial render (search UI + saved chips + charts)
+// Wire up search input, days select, and model select, then do the initial render (search UI + saved chips + charts)
 setupLocationSearch();
+setupDaysSelect();
 setupModelSelect();
 renderSavedLocations();
 
