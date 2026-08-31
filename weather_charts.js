@@ -265,6 +265,7 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
     const chartData = {
         labels: formatLabels(hours),
         windDirection: windDir,
+        hours: hours,
         datasets: [
             {
                 label: 'Temperature (°C)',
@@ -388,7 +389,7 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
                     callbacks: {
                         title: function (ctx) {
                             const index = ctx[0].dataIndex;
-                            const rawDate = hours[index]; // `hours` must be available in this scope
+                            const rawDate = hours[index];  // `hours` must be available in this scope
                             const date = new Date(rawDate);
                             return date.toLocaleString('en-AU', {
                                 weekday: 'short',
@@ -431,12 +432,6 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
                             if (index === undefined || !hours[index]) return 'transparent';
 
                             const tickTime = new Date(hours[index]);
-                            const now = new Date();
-                            const diffMinutes = Math.abs((tickTime - now) / 60000);
-
-                            // Highlight the tick closest to current time (within 30 minutes)
-                            if (diffMinutes < 30) return '#ff0';
-
                             const hour = tickTime.getHours();
                             if (hour === 0) return '#666';
                             if (hour === 12) return '#333';
@@ -496,7 +491,7 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
                 }
             }
         },
-        plugins: [windDirectionArrowsPlugin]
+        plugins: [windDirectionArrowsPlugin, nowLinePlugin]
     });
 }
 
@@ -530,6 +525,43 @@ const windDirectionArrowsPlugin = {
 
 // Register the plugin globally
 Chart.register(windDirectionArrowsPlugin);
+
+const nowLinePlugin = {
+    id: 'nowLine',
+    afterDatasetsDraw(chart) {
+        const hours = chart.config.data.hours;
+        if (!hours || !hours.length) return;
+
+        const now = Date.now();
+        let closestIndex = -1;
+        let closestDiff = Infinity;
+        hours.forEach((h, i) => {
+            const diff = Math.abs(new Date(h).getTime() - now);
+            if (diff < closestDiff) {
+                closestDiff = diff;
+                closestIndex = i;
+            }
+        });
+
+        // Only draw if "now" actually falls within this chart's hourly range
+        if (closestIndex === -1 || closestDiff > 30 * 60000) return;
+
+        const xScale = chart.scales.x;
+        const {top, bottom} = chart.chartArea;
+        const x = xScale.getPixelForValue(closestIndex);
+
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.strokeStyle = '#ff0';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x, top);
+        ctx.lineTo(x, bottom);
+        ctx.stroke();
+        ctx.restore();
+    }
+};
+Chart.register(nowLinePlugin);
 
 async function loadAllCharts(locationsList) {
     const model = getSelectedModel();
