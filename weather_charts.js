@@ -459,8 +459,8 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
 
                             const tickTime = new Date(hours[index]);
                             const hour = tickTime.getHours();
-                            if (hour === 0) return '#666';
-                            if (hour === 12) return '#333';
+                            if (hour === 0) return '#999';
+                            if (hour === 12) return '#444';
                             return 'transparent';
                         }
                     }
@@ -483,7 +483,7 @@ function createChart(container, location, hours, temp, apparent, humidity, wind,
                         drawOnChartArea: true,
                         color: (ctx) => {
                             const value = ctx.tick.value;
-                            return value % 10 === 0 ? '#666' : '#333';
+                            return value % 10 === 0 ? '#999' : '#444';
                         }
                     }
                 },
