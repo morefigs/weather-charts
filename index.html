@@ -24,6 +24,17 @@
       border: 1px solid #444;
       cursor: pointer;
     }
+    #save-btn, #load-btn {
+      background: #333;
+      color: #fff;
+      border: 1px solid #444;
+      cursor: pointer;
+      padding: 8px 12px;
+    }
+    #save-btn {
+      background: #2a6b2a;
+      border-color: #3a8b3a;
+    }
     .result-item:hover {
       background: #333;
     }
@@ -64,6 +75,8 @@
   <div style="margin-left:auto; display:flex; gap:8px;">
     <select id="days-select" style="padding:8px; background:#1e1e1e; color:#fff; border:1px solid #444;"></select>
     <select id="model-select" style="padding:8px; background:#1e1e1e; color:#fff; border:1px solid #444;"></select>
+    <button id="load-btn" title="Load your saved places, model, and days">Load</button>
+    <button id="save-btn" title="Save current places, model, and days">Save</button>
   </div>
 </div>
 

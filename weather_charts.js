@@ -9,7 +9,7 @@ const DEFAULT_LOCATIONS = [
     { name: "Blackheath", latitude: -33.63567, longitude: 150.28317 }
 ];
 const MODEL_OPTIONS = [
-    { value: 'default', label: 'Open-Meteo best match (default)' },
+    { value: 'open_meteo', label: 'Open-Meteo best match (default)' },
     { value: 'ecmwf_ifs025', label: 'ECMWF IFS 0.25°' },
     { value: 'bom_access_global', label: 'BOM (Australia)' },
     { value: 'gfs_seamless', label: 'GFS (NOAA)' },
@@ -19,8 +19,17 @@ const MODEL_OPTIONS = [
     { value: 'meteofrance_seamless', label: 'MeteoFrance' }
 ];
 
+// What's currently shown on screen — edited freely by adding/removing
+// places or switching model/days. Nothing here touches localStorage;
+// that only happens when the Save button is clicked. This split means a
+// future "load from URL params" feature can populate these variables
+// without silently overwriting your saved list.
+let currentLocations = getSavedLocations();
+let currentModel = getSelectedModel();
+let currentDays = getSelectedDays();
+
 function getSelectedModel() {
-    return localStorage.getItem(MODEL_KEY) || 'default';
+    return localStorage.getItem(MODEL_KEY) || 'open_meteo';
 }
 
 function setSelectedModel(value) {
@@ -34,11 +43,11 @@ function setupModelSelect() {
     select.innerHTML = MODEL_OPTIONS.map(o =>
         `<option value="${o.value}">${o.label}</option>`
     ).join('');
-    select.value = getSelectedModel();
+    select.value = currentModel;
 
     function applyModel() {
-        setSelectedModel(select.value);
-        renderSavedLocations();  // reload charts under the newly chosen model
+        currentModel = select.value;
+        renderCurrentView();  // reload charts under the newly chosen model
     }
 
     select.addEventListener('change', applyModel);
@@ -74,11 +83,11 @@ function setupDaysSelect() {
     select.innerHTML = DAYS_OPTIONS.map(d =>
         `<option value="${d}">${d} days</option>`
     ).join('');
-    select.value = getSelectedDays();
+    select.value = currentDays;
 
     select.addEventListener('change', () => {
-        setSelectedDays(Number(select.value));
-        renderSavedLocations();  // reload charts with the new forecast length
+        currentDays = Number(select.value);
+        renderCurrentView();  // reload charts with the new forecast length
     });
 }
 
@@ -99,19 +108,68 @@ function getSavedLocations() {
 }
 
 function saveLocation(loc) {
-    const saved = getSavedLocations();
     // avoid duplicates
-    if (saved.some(l => l.latitude === loc.latitude && l.longitude === loc.longitude)) return;
-    saved.push({ name: loc.name, country: loc.country, latitude: loc.latitude, longitude: loc.longitude });
-    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(saved));
-    renderSavedLocations();
+    if (currentLocations.some(l => l.latitude === loc.latitude && l.longitude === loc.longitude)) return;
+    currentLocations.push({ name: loc.name, country: loc.country, latitude: loc.latitude, longitude: loc.longitude });
+    renderCurrentView();
 }
 
 function removeLocation(index) {
-    const saved = getSavedLocations();
-    saved.splice(index, 1);
-    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(saved));
-    renderSavedLocations();
+    currentLocations.splice(index, 1);
+    renderCurrentView();
+}
+
+function setupSaveLoadButtons() {
+    const saveBtn = document.getElementById('save-btn');
+    const loadBtn = document.getElementById('load-btn');
+
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            const count = currentLocations.length;
+            const ok = window.confirm(
+                `Overwrite your saved setup with what's on screen?\n\n` +
+                `${count} place${count === 1 ? '' : 's'} · ${currentDays} days · ${currentModel}\n\n` +
+                `Your previously saved setup will be replaced.`
+            );
+            if (!ok) return;
+
+            localStorage.setItem(LOCATIONS_KEY, JSON.stringify(currentLocations));
+            setSelectedModel(currentModel);
+            setSelectedDays(currentDays);
+
+            const original = saveBtn.textContent;
+            saveBtn.textContent = 'Saved!';
+            setTimeout(() => { saveBtn.textContent = original; }, 1200);
+        });
+    }
+
+    if (loadBtn) {
+        loadBtn.addEventListener('click', () => {
+            const saved = getSavedLocations();
+            const ok = window.confirm(
+                `Discard what's on screen and load your saved setup?\n\n` +
+                `${saved.length} place${saved.length === 1 ? '' : 's'} · ${getSelectedDays()} days · ${getSelectedModel()}\n\n` +
+                `Any unsaved changes will be lost.`
+            );
+            if (!ok) return;
+
+            currentLocations = saved;
+            currentModel = getSelectedModel();
+            currentDays = getSelectedDays();
+
+            // Reflect the loaded model/days back into the dropdowns
+            const modelSelect = document.getElementById('model-select');
+            const daysSelect = document.getElementById('days-select');
+            if (modelSelect) modelSelect.value = currentModel;
+            if (daysSelect) daysSelect.value = currentDays;
+
+            renderCurrentView();
+
+            const original = loadBtn.textContent;
+            loadBtn.textContent = 'Loaded!';
+            setTimeout(() => { loadBtn.textContent = original; }, 1200);
+        });
+    }
 }
 
 function setupLocationSearch() {
@@ -158,11 +216,10 @@ function setupLocationSearch() {
     });
 }
 
-function renderSavedLocations() {
-    const saved = getSavedLocations();
+function renderCurrentView() {
     const container = document.getElementById('saved-locations');
     if (container) {
-        container.innerHTML = saved.map((loc, i) =>
+        container.innerHTML = currentLocations.map((loc, i) =>
             `<span style="display:inline-block;background:#333;padding:5px 10px;margin:3px;border-radius:12px;">
            ${loc.name} <button data-index="${i}" class="remove-btn" style="margin-left:5px;">×</button>
          </span>`
@@ -171,7 +228,7 @@ function renderSavedLocations() {
             btn.addEventListener('click', (e) => removeLocation(Number(e.target.dataset.index)));
         });
     }
-    loadAllCharts(saved);
+    loadAllCharts(currentLocations);
 }
 
 function getCachedWeather(key) {
@@ -206,7 +263,7 @@ async function fetchWeather(model, name, lat, lon, days) {
 
     const baseUrl = "https://api.open-meteo.com/v1/forecast";
     const params = new URLSearchParams({
-        ...(model === "default" ? {} : { models: model }),
+        ...(model === "open_meteo" ? {} : { models: model }),
         latitude: lat,
         longitude: lon,
         hourly: [
@@ -590,8 +647,8 @@ const nowLinePlugin = {
 Chart.register(nowLinePlugin);
 
 async function loadAllCharts(locationsList) {
-    const model = getSelectedModel();
-    const days = getSelectedDays();
+    const model = currentModel;
+    const days = currentDays;
     const container = document.getElementById('charts');
     container.innerHTML = '';  // clear previous charts before redrawing
     for (const loc of locationsList) {
@@ -614,11 +671,12 @@ async function loadAllCharts(locationsList) {
     }
 }
 
-// Wire up search input, days select, and model select, then do the initial render (search UI + saved chips + charts)
+// Wire up search input, days select, model select, and Save/Load, then do the initial render
 setupLocationSearch();
 setupDaysSelect();
 setupModelSelect();
-renderSavedLocations();
+setupSaveLoadButtons();
+renderCurrentView();
 
 // Automatically reload the page every hour
 setInterval(() => {
