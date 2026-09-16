@@ -21,12 +21,14 @@ const MODEL_OPTIONS = [
 
 // What's currently shown on screen — edited freely by adding/removing
 // places or switching model/days. Nothing here touches localStorage;
-// that only happens when the Save button is clicked. This split means a
-// future "load from URL params" feature can populate these variables
-// without silently overwriting your saved list.
-let currentLocations = getSavedLocations();
-let currentModel = getSelectedModel();
-let currentDays = getSelectedDays();
+// that only happens when the Save button is clicked.
+//
+// A layout in the URL wins on load; otherwise fall back to the saved
+// setup. Either way localStorage is untouched until Save is pressed.
+const urlLayout = readLayoutFromUrl();
+let currentLocations = urlLayout ? urlLayout.locations : getSavedLocations();
+let currentModel = urlLayout ? urlLayout.model : getSelectedModel();
+let currentDays = urlLayout ? urlLayout.days : getSelectedDays();
 
 function getSelectedModel() {
     return localStorage.getItem(MODEL_KEY) || 'open_meteo';
@@ -47,6 +49,7 @@ function setupModelSelect() {
 
     function applyModel() {
         currentModel = select.value;
+        clearUrlParams();
         renderCurrentView();  // reload charts under the newly chosen model
     }
 
@@ -87,6 +90,7 @@ function setupDaysSelect() {
 
     select.addEventListener('change', () => {
         currentDays = Number(select.value);
+        clearUrlParams();
         renderCurrentView();  // reload charts with the new forecast length
     });
 }
@@ -111,12 +115,99 @@ function saveLocation(loc) {
     // avoid duplicates
     if (currentLocations.some(l => l.latitude === loc.latitude && l.longitude === loc.longitude)) return;
     currentLocations.push({ name: loc.name, country: loc.country, latitude: loc.latitude, longitude: loc.longitude });
+    clearUrlParams();
     renderCurrentView();
 }
 
 function removeLocation(index) {
     currentLocations.splice(index, 1);
+    clearUrlParams();
     renderCurrentView();
+}
+
+// ---- URL sharing -------------------------------------------------------
+// Layout is encoded compactly as:
+//   ?model=<id>&days=<n>&loc=Name,lat,lon;Name,lat,lon
+// Coordinates are rounded to 4dp (~11m) which is far finer than any
+// weather model's grid, and commas/semicolons are left unescaped since
+// they're legal in a query string — both keep the URL short.
+
+function roundCoord(n) {
+    return Number(Number(n).toFixed(4));
+}
+
+function encodeLocationsParam(locations) {
+    return locations
+        .map(l => `${encodeURIComponent(l.name)},${roundCoord(l.latitude)},${roundCoord(l.longitude)}`)
+        .join(';');
+}
+
+function decodeLocationsParam(raw) {
+    const locations = [];
+    for (const part of raw.split(';')) {
+        if (!part) continue;
+        const bits = part.split(',');
+        if (bits.length < 3) continue;
+        const lon = Number(bits.pop());
+        const lat = Number(bits.pop());
+        const name = decodeURIComponent(bits.join(','));  // tolerate commas in names
+        if (!name || Number.isNaN(lat) || Number.isNaN(lon)) continue;
+        locations.push({ name, latitude: lat, longitude: lon });
+    }
+    return locations;
+}
+
+// Returns { locations, model, days } if the URL carries a layout, else null.
+function readLayoutFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const rawLoc = params.get('loc');
+    const rawModel = params.get('model');
+    const rawDays = Number(params.get('days'));
+    if (!rawLoc && !rawModel && !params.get('days')) return null;
+
+    const locations = rawLoc ? decodeLocationsParam(rawLoc) : getSavedLocations();
+    if (locations.length === 0) return null;
+
+    return {
+        locations,
+        model: MODEL_OPTIONS.some(o => o.value === rawModel) ? rawModel : getSelectedModel(),
+        days: DAYS_OPTIONS.includes(rawDays) ? rawDays : getSelectedDays()
+    };
+}
+
+function buildShareUrl() {
+    const query = `model=${encodeURIComponent(currentModel)}` +
+        `&days=${currentDays}` +
+        `&loc=${encodeLocationsParam(currentLocations)}`;
+    return `${window.location.origin}${window.location.pathname}?${query}`;
+}
+
+function urlHasParams() {
+    return window.location.search.length > 1;
+}
+
+// Drops the query string without reloading, so an edited layout stops
+// claiming to be the shared one it came from.
+function clearUrlParams() {
+    if (!urlHasParams()) return;
+    window.history.replaceState(null, '', window.location.pathname);
+}
+
+function setupShareButton() {
+    const btn = document.getElementById('share-btn');
+    if (!btn) return;
+
+    btn.addEventListener('click', async () => {
+        const url = buildShareUrl();
+        const original = btn.textContent;
+        try {
+            await navigator.clipboard.writeText(url);
+            btn.textContent = 'Copied!';
+        } catch (e) {
+            window.prompt('Copy this link:', url);
+        }
+        setTimeout(() => { btn.textContent = original; }, 1200);
+    });
 }
 
 function setupSaveLoadButtons() {
@@ -137,6 +228,10 @@ function setupSaveLoadButtons() {
             setSelectedModel(currentModel);
             setSelectedDays(currentDays);
 
+            // The URL's layout is now the saved one, so the params are
+            // redundant — drop them.
+            clearUrlParams();
+
             const original = saveBtn.textContent;
             saveBtn.textContent = 'Saved!';
             setTimeout(() => { saveBtn.textContent = original; }, 1200);
@@ -152,6 +247,13 @@ function setupSaveLoadButtons() {
                 `Any unsaved changes will be lost.`
             );
             if (!ok) return;
+
+            // If the URL carries a shared layout, just go to the bare URL —
+            // that reloads straight from the saved setup and clears the params.
+            if (urlHasParams()) {
+                window.location.href = window.location.pathname;
+                return;
+            }
 
             currentLocations = saved;
             currentModel = getSelectedModel();
@@ -676,6 +778,7 @@ setupLocationSearch();
 setupDaysSelect();
 setupModelSelect();
 setupSaveLoadButtons();
+setupShareButton();
 renderCurrentView();
 
 // Automatically reload the page every hour
